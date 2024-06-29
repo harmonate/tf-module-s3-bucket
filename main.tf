@@ -1,6 +1,6 @@
 locals {
   this_bucket_name = "${var.bucket_name}-bucket-${random_string.suffix.result}"
-  log_bucket_name  = "${var.bucket_name}-log-bucket-${random_string.log_suffix[0].result}"
+  log_bucket_name  = "${var.bucket_name}-log-bucket-${random_string.suffix.result}"
 }
 
 resource "random_string" "suffix" {
@@ -9,15 +9,6 @@ resource "random_string" "suffix" {
   upper   = false
   numeric = true
   lower   = true
-}
-
-resource "random_string" "log_suffix" {
-  length  = 5
-  special = false
-  upper   = false
-  numeric = true
-  lower   = true
-  count   = var.enable_logging ? 1 : 0
 }
 
 resource "aws_s3_bucket" "this_bucket" {

@@ -24,7 +24,6 @@ resource "aws_s3_bucket" "log_bucket" {
   force_destroy = true
 }
 
-
 resource "aws_s3_bucket_ownership_controls" "this_bucket_ownership" {
   provider      = aws.default
   bucket = aws_s3_bucket.this_bucket.id
@@ -51,7 +50,7 @@ resource "aws_s3_bucket_versioning" "this_bucket_versioning" {
 
 resource "aws_s3_bucket_logging" "this_bucket_logging" {
   provider = aws.default
-  count    = var.enable_logging != "" ? 1 : 0
+  count    = var.enable_logging ? 1 : 0
   bucket   = aws_s3_bucket.this_bucket.id
   target_bucket = var.enable_logging
   target_prefix = "${local.this_bucket_name}/"

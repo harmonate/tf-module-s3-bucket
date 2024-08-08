@@ -12,20 +12,17 @@ resource "random_string" "suffix" {
 }
 
 resource "aws_s3_bucket" "this_bucket" {
-  provider      = aws.default
   bucket        = local.this_bucket_name
   force_destroy = true
 }
 
 resource "aws_s3_bucket" "log_bucket" {
-  provider      = aws.default
   count         = var.enable_logging ? 1 : 0
   bucket        = local.log_bucket_name
   force_destroy = true
 }
 
 resource "aws_s3_bucket_ownership_controls" "this_bucket_ownership" {
-  provider      = aws.default
   bucket = aws_s3_bucket.this_bucket.id
   rule {
     object_ownership = "BucketOwnerPreferred"
@@ -33,7 +30,6 @@ resource "aws_s3_bucket_ownership_controls" "this_bucket_ownership" {
 }
 
 resource "aws_s3_bucket_acl" "this_bucket_acl" {
-  provider      = aws.default
   depends_on = [aws_s3_bucket_ownership_controls.this_bucket_ownership]
 
   bucket = aws_s3_bucket.this_bucket.id
@@ -41,7 +37,6 @@ resource "aws_s3_bucket_acl" "this_bucket_acl" {
 }
 
 resource "aws_s3_bucket_versioning" "this_bucket_versioning" {
-  provider      = aws.default
   bucket = aws_s3_bucket.this_bucket.id
   versioning_configuration {
     status = var.enable_versioning ? "Enabled" : "Suspended"
@@ -49,7 +44,6 @@ resource "aws_s3_bucket_versioning" "this_bucket_versioning" {
 }
 
 resource "aws_s3_bucket_logging" "this_bucket_logging" {
-  provider = aws.default
   count    = var.enable_logging ? 1 : 0
   bucket   = aws_s3_bucket.this_bucket.id
   target_bucket = var.enable_logging
@@ -57,7 +51,6 @@ resource "aws_s3_bucket_logging" "this_bucket_logging" {
 }
 
 resource "aws_s3_bucket_public_access_block" "this_bucket_public_access_block" {
-  provider = aws.default
   bucket   = aws_s3_bucket.this_bucket.id
   block_public_acls       = true
   block_public_policy     = true
@@ -66,7 +59,6 @@ resource "aws_s3_bucket_public_access_block" "this_bucket_public_access_block" {
 }
 
 resource "aws_s3_bucket_policy" "this_bucket_policy" {
-  provider = aws.default
   bucket   = aws_s3_bucket.this_bucket.id
   policy   = jsonencode({
     Version = "2012-10-17",
@@ -86,7 +78,6 @@ resource "aws_s3_bucket_policy" "this_bucket_policy" {
 
 
 resource "aws_s3_bucket_policy" "log_bucket_policy" {
-  provider = aws.default
   count    = var.enable_logging ? 1 : 0
   bucket   = local.log_bucket_name
   policy   = jsonencode({

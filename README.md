@@ -9,7 +9,11 @@ module "s3_bucket" {
     AWS = "arn:aws:iam::123456789012:user/example"
   }
   bucket_policy_effect = "Allow"
-  bucket_policy_action = ["s3:GetObject"]
+  bucket_policy_action = [
+    "s3:GetObject",
+    "s3:ListBucket",
+    "s3:ListAllMyBuckets"
+  ]
   enable_logging = false   #optional - create a log bucket with same name as bucket + log
 }
 ```

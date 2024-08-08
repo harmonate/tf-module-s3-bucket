@@ -18,6 +18,9 @@ variable "enable_logging" {
 variable "bucket_policy_principal" {
   description = "The principal for the bucket policy"
   type        = map(string)
+  default     = {
+    "AWS" = "*"
+  }
 }
 
 variable "bucket_policy_effect" {

@@ -33,3 +33,16 @@ variable "bucket_policy_action" {
   description = "The action for the bucket policy"
   type        = list(string)
 }
+
+variable "lifecycle_rules" {
+  description = "List of lifecycle rules to configure for the S3 bucket"
+  type = list(object({
+    id      = string
+    enabled = bool
+    prefix  = string
+    expiration = object({
+      days = number
+    })
+  }))
+  default = []
+}

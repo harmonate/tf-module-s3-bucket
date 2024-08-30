@@ -16,6 +16,27 @@ resource "aws_s3_bucket" "this_bucket" {
   force_destroy = true
 }
 
+resource "aws_s3_bucket_lifecycle_configuration" "this_bucket_lifecycle" {
+  count  = length(var.lifecycle_rules) > 0 ? 1 : 0
+  bucket = aws_s3_bucket.this_bucket.id
+
+  dynamic "rule" {
+    for_each = var.lifecycle_rules
+    content {
+      id     = rule.value.id
+      status = rule.value.enabled ? "Enabled" : "Disabled"
+
+      filter {
+        prefix = rule.value.prefix
+      }
+
+      expiration {
+        days = rule.value.expiration.days
+      }
+    }
+  }
+}
+
 resource "aws_s3_bucket" "log_bucket" {
   count         = var.enable_logging ? 1 : 0
   bucket        = local.log_bucket_name
@@ -44,14 +65,14 @@ resource "aws_s3_bucket_versioning" "this_bucket_versioning" {
 }
 
 resource "aws_s3_bucket_logging" "this_bucket_logging" {
-  count    = var.enable_logging ? 1 : 0
-  bucket   = aws_s3_bucket.this_bucket.id
-  target_bucket = var.enable_logging
+  count         = var.enable_logging ? 1 : 0
+  bucket        = aws_s3_bucket.this_bucket.id
+  target_bucket = aws_s3_bucket.log_bucket[0].id
   target_prefix = "${local.this_bucket_name}/"
 }
 
 resource "aws_s3_bucket_public_access_block" "this_bucket_public_access_block" {
-  bucket   = aws_s3_bucket.this_bucket.id
+  bucket                  = aws_s3_bucket.this_bucket.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -59,14 +80,14 @@ resource "aws_s3_bucket_public_access_block" "this_bucket_public_access_block" {
 }
 
 resource "aws_s3_bucket_policy" "this_bucket_policy" {
-  bucket   = aws_s3_bucket.this_bucket.id
-  policy   = jsonencode({
+  bucket = aws_s3_bucket.this_bucket.id
+  policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
-        Effect = var.bucket_policy_effect,
+        Effect    = var.bucket_policy_effect,
         Principal = var.bucket_policy_principal,
-        Action = var.bucket_policy_action,
+        Action    = var.bucket_policy_action,
         Resource = [
           aws_s3_bucket.this_bucket.arn,
           "${aws_s3_bucket.this_bucket.arn}/*"
@@ -76,11 +97,10 @@ resource "aws_s3_bucket_policy" "this_bucket_policy" {
   })
 }
 
-
 resource "aws_s3_bucket_policy" "log_bucket_policy" {
-  count    = var.enable_logging ? 1 : 0
-  bucket   = local.log_bucket_name
-  policy   = jsonencode({
+  count  = var.enable_logging ? 1 : 0
+  bucket = local.log_bucket_name
+  policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
       {
@@ -110,6 +130,30 @@ resource "aws_s3_bucket_policy" "log_bucket_policy" {
         Condition = {
           StringEquals = {
             "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_s3_bucket_policy" "secure_transport_policy" {
+  bucket = aws_s3_bucket.this_bucket.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "DenyInsecureTransport"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.this_bucket.arn,
+          "${aws_s3_bucket.this_bucket.arn}/*"
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
           }
         }
       }
